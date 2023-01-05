@@ -136,61 +136,8 @@ local config = {
 
         -- Extend LSP configuration
         lsp = {
-                -- enable servers that you already have installed without mason
-                servers = {
-                        -- "pyright"
-                },
-                formatting = {
-                        -- control auto formatting on save
-                        format_on_save = {
-                                enabled = true, -- enable or disable format on save globally
-                                allow_filetypes = { -- enable format on save for specified filetypes only
-                                        -- "go",
-                                },
-                                ignore_filetypes = { -- disable format on save for specified filetypes
-                                        -- "python",
-                                },
-                        },
-                        disabled = { -- disable formatting capabilities for the listed language servers
-                                -- "sumneko_lua",
-                        },
-                        timeout_ms = 10000, -- default format timeout
-                        -- filter = function(client) -- fully override the default formatting function
-                        --   return true
-                        -- end
-                },
-                -- easily add or disable built in mappings added during LSP attaching
-                mappings = {
-                        n = {
-                                -- ["<leader>lf"] = false -- disable formatting keymap
-                        },
-                },
-                -- add to the global LSP on_attach function
-                -- on_attach = function(client, bufnr)
-                -- end,
-
-                -- override the mason server-registration function
-                -- server_registration = function(server, opts)
-                --   require("lspconfig")[server].setup(opts)
-                -- end,
-
-                -- Add overrides for LSP server settings, the keys are the name of the server
-                ["server-settings"] = {
-                        -- example for addings schemas to yamlls
-                        -- yamlls = { -- override table for require("lspconfig").yamlls.setup({...})
-                        --   settings = {
-                        --     yaml = {
-                        --       schemas = {
-                        --         ["http://json.schemastore.org/github-workflow"] = ".github/workflows/*.{yml,yaml}",
-                        --         ["http://json.schemastore.org/github-action"] = ".github/action.{yml,yaml}",
-                        --         ["http://json.schemastore.org/ansible-stable-2.9"] = "roles/tasks/*.{yml,yaml}",
-                        --       },
-                        --     },
-                        --   },
-                        -- },
-                },
+                skip_setup = { "tsserver" },
         },
-
         -- Mapping data with "desc" stored directly by vim.keymap.set().
         --
         -- Please use this mappings table to set keyboard mapping since this is the
@@ -234,6 +181,15 @@ local config = {
                         --   end,
                         -- },
 
+                        {
+                                "jose-elias-alvarez/typescript.nvim",
+                                after = "mason-lspconfig.nvim",
+                                config = function()
+                                        require("typescript").setup {
+                                                server = astronvim.lsp.server_settings "tsserver",
+                                        }
+                                end,
+                        },
                         -- We also support a key value style plugin definition similar to NvChad:
                         -- ["ray-x/lsp_signature.nvim"] = {
                         --   event = "BufRead",
@@ -247,7 +203,7 @@ local config = {
                 },
                 -- use mason-lspconfig to configure LSP installations
                 ["mason-lspconfig"] = { -- overrides `require("mason-lspconfig").setup(...)`
-                        ensure_installed = { "sumneko_lua" },
+                        ensure_installed = { "tsserver" },
                 },
                 -- use mason-null-ls to configure Formatters/Linter installation for null-ls sources
                 ["mason-null-ls"] = { -- overrides `require("mason-null-ls").setup(...)`
