@@ -136,7 +136,17 @@ local config = {
 
         -- Extend LSP configuration
         lsp = {
-                skip_setup = { "tsserver" },
+                formatting = {
+                        format_on_save = true, -- enable or disable automatic formatting on save
+                        timeout_ms = 3200, -- adjust the timeout_ms variable for formatting
+                        filter = function(client)
+                                -- only enable null-ls for javascript files
+                                if vim.bo.filetype == "javascript" then return client.name == "null-ls" end
+
+                                -- enable all other clients
+                                return true
+                        end,
+                },
         },
         -- Mapping data with "desc" stored directly by vim.keymap.set().
         --
@@ -165,11 +175,9 @@ local config = {
                 init = {
                         -- You can disable default plugins as follows:
                         -- ["goolord/alpha-nvim"] = { disable = true },
-                        "jose-elias-alvarez/typescript.nvim",
                         "drewtempelmeyer/palenight.vim",
                         "joshdick/onedark.vim",
                         "leafOfTree/vim-vue-plugin",
-                        "folke/todo-comments.nvim",
                         -- You can also add new plugins here as well:
                         -- Add plugins, the packer syntax without the "use"
                         -- { "andweeb/presence.nvim" },
@@ -187,6 +195,7 @@ local config = {
                                 config = function()
                                         require("typescript").setup {
                                                 server = astronvim.lsp.server_settings "tsserver",
+                                                timeout = 10000,
                                         }
                                 end,
                         },
@@ -206,11 +215,48 @@ local config = {
                         ensure_installed = { "tsserver" },
                 },
                 -- use mason-null-ls to configure Formatters/Linter installation for null-ls sources
-                ["mason-null-ls"] = { -- overrides `require("mason-null-ls").setup(...)`
-                        ensure_installed = { "prettier", "stylua" },
+                ["mason-null-ls"] = {
+                        setup_handlers = {
+                                prettier = function()
+                                        require("null-ls").register(require("null-ls").builtins.formatting.prettier.with {
+                                                condition = function(utils)
+                                                        return utils.root_has_file "package.json"
+                                                            or utils.root_has_file ".prettierrc"
+                                                            or utils.root_has_file ".prettierrc.json"
+                                                            or utils.root_has_file ".prettierrc.js"
+                                                end,
+                                        })
+                                end,
+                                -- For prettierd:
+                                prettierd = function()
+                                        require("null-ls").register(require("null-ls").builtins.formatting.prettierd.with {
+                                                condition = function(utils)
+                                                        return utils.root_has_file "package.json"
+                                                            or utils.root_has_file ".prettierrc"
+                                                            or utils.root_has_file ".prettierrc.json"
+                                                            or utils.root_has_file ".prettierrc.js"
+                                                end,
+                                        })
+                                end,
+                                -- For eslint_d:
+                                eslint_d = function()
+                                        require("null-ls").register(require("null-ls").builtins.diagnostics.eslint_d.with {
+                                                condition = function(utils)
+                                                        return utils.root_has_file "package.json"
+                                                            or utils.root_has_file ".eslintrc.json"
+                                                            or utils.root_has_file ".eslintrc.js"
+                                                end,
+                                        })
+                                end,
+                        },
                 },
                 ["mason-nvim-dap"] = { -- overrides `require("mason-nvim-dap").setup(...)`
                         ensure_installed = { "python, eslintd" },
+                },
+                ["telescope"] = {
+                        require("telescope").setup {
+                                defaults = { file_ignore_patterns = { "node_modules", "public", "mocks" } },
+                        },
                 },
         },
 
@@ -246,7 +292,7 @@ local config = {
         heirline = {
                 -- -- Customize different separators between sections
                 -- separators = {
-                --   tab = { "", "" },
+                --         tab = { "", "" },
                 -- },
                 -- -- Customize colors for each element each element has a `_fg` and a `_bg`
                 -- colors = function(colors)
@@ -260,11 +306,11 @@ local config = {
                 -- },
                 -- -- Customize if icons should be highlighted
                 -- icon_highlights = {
-                --   breadcrumbs = false, -- LSP symbols in the breadcrumbs
-                --   file_icon = {
-                --     winbar = false, -- Filetype icon in the winbar inactive windows
-                --     statusline = true, -- Filetype icon in the statusline
-                --   },
+                -- breadcrumbs = false, -- LSP symbols in the breadcrumbs
+                -- file_icon = {
+                --         winbar = true, -- Filetype icon in the winbar inactive windows
+                --         statusline = true, -- Filetype icon in the statusline
+                -- },
                 -- },
         },
 
