@@ -5,10 +5,11 @@
 -- normal format is "key = value". These also handle array like data structures
 -- where a value with no key simply has an implicit numeric key
 local config = {
+
         -- Configure AstroNvim updates
         updater = {
                 remote = "origin", -- remote to use
-                channel = "nightly", -- "stable" or "nightly"
+                channel = "stable", -- "stable" or "nightly"
                 version = "latest", -- "latest", tag name, or regex search like "v1.*" to only do updates before v2 (STABLE ONLY)
                 branch = "main", -- branch name (NIGHTLY ONLY)
                 commit = nil, -- commit hash (NIGHTLY ONLY)
@@ -25,16 +26,16 @@ local config = {
         },
 
         -- Set colorscheme to use
-        colorscheme = "onedark",
+        colorscheme = "default_theme",
 
         -- Add highlight groups in any theme
         highlights = {
-                onedark = function(highlights)
-                        local C = require "default_theme.colors"
-
-                        highlights.Normal = { fg = C.fg, bg = C.bg }
-                        return highlights
-                end,
+                -- init = { -- this table overrides highlights in all themes
+                --   Normal = { bg = "#000000" },
+                -- }
+                -- duskfox = { -- a table of overrides/changes to the duskfox theme
+                --   Normal = { bg = "#000000" },
+                -- },
         },
 
         -- set vim options here (vim.<first_key>.<second_key> = value)
@@ -136,9 +137,12 @@ local config = {
 
         -- Extend LSP configuration
         lsp = {
+                -- enable servers that you already have installed without mason
+                servers = {
+                        -- "pyright"
+                },
                 formatting = {
-                        format_on_save = true, -- enable or disable automatic formatting on save
-                        timeout_ms = 3200, -- adjust the timeout_ms variable for formatting
+                        -- control auto formatting on save
                         filter = function(client)
                                 -- only enable null-ls for javascript files
                                 if vim.bo.filetype == "javascript" then return client.name == "null-ls" end
@@ -146,75 +150,37 @@ local config = {
                                 -- enable all other clients
                                 return true
                         end,
-                },
-        },
-        -- Mapping data with "desc" stored directly by vim.keymap.set().
-        --
-        -- Please use this mappings table to set keyboard mapping since this is the
-        -- lower level configuration and more robust one. (which-key will
-        -- automatically pick-up stored data by this setting.)
-        mappings = {
-                -- first key is the mode
-                n = {
-                        -- second key is the lefthand side of the map
-                        -- mappings seen under group name "Buffer"
-                        ["<leader>bb"] = { "<cmd>tabnew<cr>", desc = "New tab" },
-                        ["<leader>bc"] = { "<cmd>BufferLinePickClose<cr>", desc = "Pick to close" },
-                        ["<leader>bj"] = { "<cmd>BufferLinePick<cr>", desc = "Pick to jump" },
-                        ["<leader>bt"] = { "<cmd>BufferLineSortByTabs<cr>", desc = "Sort by tabs" },
-                        -- quick save
-                        -- ["<C-s>"] = { ":w!<cr>", desc = "Save File" },  -- change description but the same command
-                },
-                t = {
-                        -- setting a mapping to false will disable it
-                        -- ["<esc>"] = false,
-                },
-        },
-        -- Configure plugins
-        plugins = {
-                init = {
-                        -- You can disable default plugins as follows:
-                        -- ["goolord/alpha-nvim"] = { disable = true },
-                        "drewtempelmeyer/palenight.vim",
-                        "joshdick/onedark.vim",
-                        "leafOfTree/vim-vue-plugin",
-                        -- You can also add new plugins here as well:
-                        -- Add plugins, the packer syntax without the "use"
-                        -- { "andweeb/presence.nvim" },
-                        -- {
-                        --   "ray-x/lsp_signature.nvim",
-                        --   event = "BufRead",
-                        --   config = function()
-                        --     require("lsp_signature").setup()
-                        --   end,
-                        -- },
-
-                        {
-                                "jose-elias-alvarez/typescript.nvim",
-                                after = "mason-lspconfig.nvim",
-                                config = function()
-                                        require("typescript").setup {
-                                                server = astronvim.lsp.server_settings "tsserver",
-                                                timeout = 10000,
-                                        }
-                                end,
+                        format_on_save = {
+                                enabled = true, -- enable or disable format on save globally
+                                allow_filetypes = { -- enable format on save for specified filetypes only
+                                        -- "go",
+                                },
+                                ignore_filetypes = { -- disable format on save for specified filetypes
+                                        -- "python",
+                                },
                         },
-                        -- We also support a key value style plugin definition similar to NvChad:
-                        -- ["ray-x/lsp_signature.nvim"] = {
-                        --   event = "BufRead",
-                        --   config = function()
-                        --     require("lsp_signature").setup()
-                        --   end,
-                        -- },
+                        disabled = { -- disable formatting capabilities for the listed language servers
+                                -- "sumneko_lua",
+                        },
+                        timeout_ms = 1000, -- default format timeout
+                        -- filter = function(client) -- fully override the default formatting function
+                        --   return true
+                        -- end
                 },
-                treesitter = { -- overrides `require("treesitter").setup(...)`
-                        -- ensure_installed = { "lua" },
+                -- easily add or disable built in mappings added during LSP attaching
+                mappings = {
+                        n = {
+                                -- ["<leader>lf"] = false -- disable formatting keymap
+                        },
                 },
-                -- use mason-lspconfig to configure LSP installations
-                ["mason-lspconfig"] = { -- overrides `require("mason-lspconfig").setup(...)`
-                        ensure_installed = { "tsserver" },
-                },
-                -- use mason-null-ls to configure Formatters/Linter installation for null-ls sources
+                -- add to the global LSP on_attach function
+                -- on_attach = function(client, bufnr)
+                -- end,
+
+                -- override the mason server-registration function
+                -- server_registration = function(server, opts)
+                --   require("lspconfig")[server].setup(opts)
+                -- end,
                 ["mason-null-ls"] = {
                         setup_handlers = {
                                 prettier = function()
@@ -250,13 +216,116 @@ local config = {
                                 end,
                         },
                 },
-                ["mason-nvim-dap"] = { -- overrides `require("mason-nvim-dap").setup(...)`
-                        ensure_installed = { "python, eslintd" },
+
+                -- Add overrides for LSP server settings, the keys are the name of the server
+                ["server-settings"] = {
+                        -- example for addings schemas to yamlls
+                        -- yamlls = { -- override table for require("lspconfig").yamlls.setup({...})
+                        --   settings = {
+                        --     yaml = {
+                        --       schemas = {
+                        --         ["http://json.schemastore.org/github-workflow"] = ".github/workflows/*.{yml,yaml}",
+                        --         ["http://json.schemastore.org/github-action"] = ".github/action.{yml,yaml}",
+                        --         ["http://json.schemastore.org/ansible-stable-2.9"] = "roles/tasks/*.{yml,yaml}",
+                        --       },
+                        --     },
+                        --   },
+                        -- },
                 },
                 ["telescope"] = {
                         require("telescope").setup {
                                 defaults = { file_ignore_patterns = { "node_modules", "public", "mocks" } },
                         },
+                },
+        },
+
+        -- Mapping data with "desc" stored directly by vim.keymap.set().
+        --
+        -- Please use this mappings table to set keyboard mapping since this is the
+        -- lower level configuration and more robust one. (which-key will
+        -- automatically pick-up stored data by this setting.)
+        mappings = {
+                -- first key is the mode
+                n = {
+                        -- second key is the lefthand side of the map
+                        -- mappings seen under group name "Buffer"
+                        ["<leader>bb"] = { "<cmd>tabnew<cr>", desc = "New tab" },
+                        ["<leader>bc"] = { "<cmd>BufferLinePickClose<cr>", desc = "Pick to close" },
+                        ["<leader>bj"] = { "<cmd>BufferLinePick<cr>", desc = "Pick to jump" },
+                        ["<leader>bt"] = { "<cmd>BufferLineSortByTabs<cr>", desc = "Sort by tabs" },
+                        -- quick save
+                        -- ["<C-s>"] = { ":w!<cr>", desc = "Save File" },  -- change description but the same command
+                },
+                t = {
+                        -- setting a mapping to false will disable it
+                        -- ["<esc>"] = false,
+                },
+        },
+
+        -- Configure plugins
+        plugins = {
+                init = {
+                        -- You can disable default plugins as follows:
+                        -- ["goolord/alpha-nvim"] = { disable = true },
+
+                        "drewtempelmeyer/palenight.vim",
+                        "joshdick/onedark.vim",
+                        "leafOfTree/vim-vue-plugin",
+                        {
+                                "jose-elias-alvarez/typescript.nvim",
+                                after = "mason-lspconfig.nvim",
+                                config = function()
+                                        require("typescript").setup {
+                                                server = astronvim.lsp.server_settings "tsserver",
+                                                timeout = 10000,
+                                        }
+                                end,
+                        }, -- You can also add new plugins here as well:
+                        -- Add plugins, the packer syntax without the "use"
+                        -- { "andweeb/presence.nvim" },
+                        -- {
+                        --   "ray-x/lsp_signature.nvim",
+                        --   event = "BufRead",
+                        --   config = function()
+                        --     require("lsp_signature").setup()
+                        --   end,
+                        -- },
+                        -- We also support a key value style plugin definition similar to NvChad:
+                        -- ["ray-x/lsp_signature.nvim"] = {
+                        --   event = "BufRead",
+                        --   config = function()
+                        --     require("lsp_signature").setup()
+                        --   end,
+                        -- },
+                },
+                -- All other entries override the require("<key>").setup({...}) call for default plugins
+                ["null-ls"] = function(config) -- overrides `require("null-ls").setup(config)`
+                        -- config variable is the default configuration table for the setup function call
+                        -- local null_ls = require "null-ls"
+
+                        -- Check supported formatters and linters
+                        -- https://github.com/jose-elias-alvarez/null-ls.nvim/tree/main/lua/null-ls/builtins/formatting
+                        -- https://github.com/jose-elias-alvarez/null-ls.nvim/tree/main/lua/null-ls/builtins/diagnostics
+                        config.sources = {
+                                -- Set a formatter
+                                -- null_ls.builtins.formatting.stylua,
+                                -- null_ls.builtins.formatting.prettier,
+                        }
+                        return config -- return final config table
+                end,
+                treesitter = { -- overrides `require("treesitter").setup(...)`
+                        -- ensure_installed = { "lua" },
+                },
+                -- use mason-lspconfig to configure LSP installations
+                ["mason-lspconfig"] = { -- overrides `require("mason-lspconfig").setup(...)`
+                        -- ensure_installed = { "sumneko_lua" },
+                },
+                -- use mason-null-ls to configure Formatters/Linter installation for null-ls sources
+                ["mason-null-ls"] = { -- overrides `require("mason-null-ls").setup(...)`
+                        -- ensure_installed = { "prettier", "stylua" },
+                },
+                ["mason-nvim-dap"] = { -- overrides `require("mason-nvim-dap").setup(...)`
+                        -- ensure_installed = { "python" },
                 },
         },
 
@@ -292,7 +361,7 @@ local config = {
         heirline = {
                 -- -- Customize different separators between sections
                 -- separators = {
-                --         tab = { "", "" },
+                --   tab = { "", "" },
                 -- },
                 -- -- Customize colors for each element each element has a `_fg` and a `_bg`
                 -- colors = function(colors)
@@ -306,11 +375,11 @@ local config = {
                 -- },
                 -- -- Customize if icons should be highlighted
                 -- icon_highlights = {
-                -- breadcrumbs = false, -- LSP symbols in the breadcrumbs
-                -- file_icon = {
-                --         winbar = true, -- Filetype icon in the winbar inactive windows
-                --         statusline = true, -- Filetype icon in the statusline
-                -- },
+                --   breadcrumbs = false, -- LSP symbols in the breadcrumbs
+                --   file_icon = {
+                --     winbar = false, -- Filetype icon in the winbar inactive windows
+                --     statusline = true, -- Filetype icon in the statusline
+                --   },
                 -- },
         },
 
