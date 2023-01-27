@@ -99,9 +99,9 @@ local config = {
 
                         -- New approach instead of diagnostic_style
                         hl.DiagnosticError.italic = true
-                        hl.DiagnosticHint.italic = true
                         hl.DiagnosticInfo.italic = true
                         hl.DiagnosticWarn.italic = true
+                        hl.DiagnosticHint.italic = true
 
                         return hl
                 end,
@@ -162,7 +162,7 @@ local config = {
                         disabled = { -- disable formatting capabilities for the listed language servers
                                 -- "sumneko_lua",
                         },
-                        timeout_ms = 1000, -- default format timeout
+                        timeout_ms = 10000, -- default format timeout
                         -- filter = function(client) -- fully override the default formatting function
                         --   return true
                         -- end
@@ -259,6 +259,10 @@ local config = {
                 t = {
                         -- setting a mapping to false will disable it
                         -- ["<esc>"] = false,
+                },
+                v = {
+                        ["J"] = { ":m '>+1<CR>gv=gv" },
+                        ["K"] = { ":m '<-2<CR>gv=gv" },
                 },
         },
 
@@ -360,9 +364,9 @@ local config = {
         -- Customize Heirline options
         heirline = {
                 -- -- Customize different separators between sections
-                -- separators = {
-                --   tab = { "", "" },
-                -- },
+                separators = {
+                        tab = { "", "" },
+                },
                 -- -- Customize colors for each element each element has a `_fg` and a `_bg`
                 -- colors = function(colors)
                 --   colors.git_branch_fg = astronvim.get_hlgroup "Conditional"
@@ -419,4 +423,3 @@ local config = {
 }
 
 return config
-
